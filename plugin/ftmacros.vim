@@ -11,14 +11,7 @@ if exists('g:loaded_ftmacros') | finish | endif
 
 " settings file must exist to continue
 
-if !exists('g:ftmacros_file')
-  if has('win32') || has('win64')
-    let g:ftmacros_file = '~/vimfiles/settings/ftmacros.vim'
-  else
-    let g:ftmacros_file = '~/.vim/settings/ftmacros.vim'
-  endif
-endif
-if !filereadable(fnamemodify(g:ftmacros_file, ':p'))
+if !exists('g:ftmacros_file') || !filereadable(fnamemodify(g:ftmacros_file, ':p'))
   if writefile([], fnamemodify(g:ftmacros_file, ':p')) < 0
     echomsg "[ftmacros] Could not create settings file, define it in g:ftmacros_file"
     finish
@@ -42,8 +35,9 @@ endif
 "------------------------------------------------------------------------------
 
 command! -bang -nargs=1 SaveMacro   call ftmacros#save(<bang>0, <q-args>)
+command! -bang -nargs=1 EditMacro   call ftmacros#edit(<bang>0, <q-args>)
 command! -bang -nargs=1 DeleteMacro call ftmacros#delete(<bang>0, <q-args>)
-command!                ListMacro   call ftmacros#list()
+command!                ListMacros  call ftmacros#list()
 
 "------------------------------------------------------------------------------
 
