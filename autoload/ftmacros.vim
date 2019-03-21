@@ -7,6 +7,8 @@ fun! ftmacros#save(default, register, ...)
 
   if !s:valid(a:register) | return | endif
 
+  let registered = s:is_registered(a:default, a:register)
+
   if a:default
     let g:ftmacros.default[a:register] = getreg(a:register)
   elseif !empty(&ft)
@@ -27,12 +29,15 @@ fun! ftmacros#save(default, register, ...)
 
   call s:update_buffer()
 
+  let n = registered ? 'new' : ''
+  let s = registered ? 'updated' : 'saved'
+
   if a:default
-    echo '[ftmacros] default macro for register' a:register 'has been saved'
+    echo '[ftmacros]' n 'default macro for register' a:register 'has been' s
   elseif !empty(&ft)
-    echo '[ftmacros] macro for register' a:register 'and filetype' &ft 'has been saved'
+    echo '[ftmacros]' n 'macro for register' a:register 'and filetype' &ft 'has been' s
   else
-    echo '[ftmacros] macro for register' a:register 'and no filetype has been saved'
+    echo '[ftmacros]' n 'macro for register' a:register 'and no filetype has been' s
   endif
 endfun
 
@@ -71,7 +76,7 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! ftmacros#edit(default, register)
-  let macro = substitute(getreg(a:register), "\<Esc>", '\\<Esc>', 'g')
+  let macro = s:convert_from_special(getreg(a:register))
   if !s:valid(a:register) | return | endif
 
   echohl String
@@ -79,19 +84,27 @@ fun! ftmacros#edit(default, register)
   echohl None
   if empty(new) | return s:warn('Canceled') | endif
 
+  let new = s:convert_to_special(new)
   let new = substitute(new, '\c\\<Esc>', "\<Esc>", 'g')
-  call setreg(a:register, new, 'v')
-
-  if a:default
-    let g:ftmacros.default[a:register] = new
-  elseif !empty(&ft)
-    if !has_key(g:ftmacros, &ft)
-      let g:ftmacros[&ft] = { a:register: new }
-    else
-      let g:ftmacros[&ft][a:register] = new
-    endif
+  let type = getregtype(a:register) ==# 'v' ? 'char' : getregtype(a:register) ==# 'V' ? 'line' : 'block'
+  if type == 'char'
+    call setreg(a:register, new, 'v')
   else
-    let g:ftmacros.noft[a:register] = new
+    let type = confirm("Current register type is ".type.", set type to?", "&char\n&line\n&block", 1)
+    if !type | return s:warn('Canceled') | endif
+    let type = type == 1 ? 'v' : type == 2 ? 'l' : 'b'
+    call setreg(a:register, new, type)
+  endif
+
+  if !s:is_registered(a:default, a:register)
+    redraw
+    echo '[ftmacros] macro for register' a:register 'has been edited, but is currently not registered'
+    return
+  endif
+
+  if a:default       | let g:ftmacros.default[a:register] = new
+  elseif !empty(&ft) | let g:ftmacros[&ft][a:register] = new
+  else               | let g:ftmacros.noft[a:register] = new
   endif
 
   call s:update_buffer()
@@ -182,10 +195,51 @@ endfun
 
 fun! s:valid(reg)
   let valid = map(range(97, 122) + range(48, 57), 'nr2char(v:val)')
-  if getregtype(a:reg) !=# 'v' || index(valid, a:reg) < 0
+  if index(valid, a:reg) < 0
     return s:warn('[ftmacros] wrong or empty register')
   endif
   return 1
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:is_registered(default, register) abort
+  """Return true if the macro is in the g:ftmacros register.
+  return  a:default && has_key(g:ftmacros.default, a:register) ||
+        \ !empty(&ft) && has_key(g:ftmacros, &ft) && has_key(g:ftmacros[&ft], a:register) ||
+        \ empty(&ft) && has_key(g:ftmacros.noft, a:register)
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:special(key, val)
+  return "\<C-" . nr2char(a:val) . ">"
+endfun
+
+fun! s:non_special(key, val)
+  return '\\<C-' . nr2char(a:val) . '>'
+endfun
+
+fun! s:convert_from_special(text) abort
+  let converted = substitute(a:text,"\<Esc>",'\\<Esc>','g')
+  let converted = substitute(converted,"\<BS>",'\\<BS>','g')
+  let converted = substitute(converted,"\<C-R>",'\\<C-R>','g')
+  let converted = substitute(converted,"\<C-_>",'\\<C-_>','g')
+  let converted = substitute(converted,"\<C-M>",'\\<C-M>','g')
+  let converted = substitute(converted,"\<C-J>",'\\<C-J>','g')
+  return converted
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:convert_to_special(text) abort
+  let converted = substitute(a:text,'\\<Esc>',"\<Esc>",'g')
+  let converted = substitute(converted,'\\<BS>',"\<BS>",'g')
+  let converted = substitute(converted,'\\<C-R>',"\<C-R>",'g')
+  let converted = substitute(converted,'\\<C-_>',"\<C-_>",'g')
+  let converted = substitute(converted,'\\<C-M>',"\<C-M>",'g')
+  let converted = substitute(converted,'\\<C-J>',"\<C-J>",'g')
+  return converted
 endfun
 
 "------------------------------------------------------------------------------
