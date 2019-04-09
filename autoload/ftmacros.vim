@@ -7,7 +7,7 @@ fun! ftmacros#save(default, register, ...)
 
   if !s:valid(a:register) | return | endif
 
-  let registered = s:is_registered(a:default, a:register)
+  let registered = s:is_registered(a:default, a:register, a:0 ? a:1 : &ft)
 
   if a:default
     let g:ftmacros.default[a:register] = getreg(a:register)
@@ -43,7 +43,7 @@ endfun
 
 "------------------------------------------------------------------------------
 
-fun! ftmacros#delete(default, register)
+fun! ftmacros#delete(default, register, ...)
   try
     if a:default
       unlet g:ftmacros.default[a:register]
@@ -75,46 +75,61 @@ endfun
 
 "------------------------------------------------------------------------------
 
-fun! ftmacros#edit(default, register)
-  let macro = s:convert_from_special(getreg(a:register))
+fun! ftmacros#edit(default, register, ...)
   if !s:valid(a:register) | return | endif
+  call s:macro_buffer(a:default, a:register, a:0 ? a:1 : &ft)
+endfun
 
-  echohl String
-  let new = input('Register '.a:register.': ', macro)
-  echohl None
-  if empty(new) | return s:warn('Canceled') | endif
+fun! s:macro_buffer(default, register, ft)
+  botright new ftmacro_edit
+  setlocal bt=acwrite bh=wipe noswf nobl
+  put =getreg(a:register)
+  1d _
+  set nomodified
+  if line('$') < winheight(winnr())
+    execute 'resize' line('$')
+  end
+  let &l:statusline = "Editing Register ".a:register
+  let b:ftmacros = {'default': a:default, 'register': a:register, 'ft': a:ft}
+  redraw!
 
-  let new = s:convert_to_special(new)
-  let new = substitute(new, '\c\\<Esc>', "\<Esc>", 'g')
-  let type = getregtype(a:register) ==# 'v' ? 'char' : getregtype(a:register) ==# 'V' ? 'line' : 'block'
+  autocmd WinLeave    <buffer> wincmd p
+  autocmd BufWriteCmd <buffer> call s:macro_write_back()
+endfun
+
+fun! s:macro_write_back() abort
+  let [ R, default, ft ] = [ b:ftmacros.register, b:ftmacros.default, b:ftmacros.ft ]
+  let new = join(getline(1, '$'), '\n')
+  let type = getregtype(R) ==# 'v' ? 'char' : getregtype(R) ==# 'V' ? 'line' : 'block'
   if type == 'char'
-    call setreg(a:register, new, 'v')
+    call setreg(R, new, 'v')
   else
     let type = confirm("Current register type is ".type.", set type to?", "&char\n&line\n&block", 1)
     if !type | return s:warn('Canceled') | endif
     let type = type == 1 ? 'v' : type == 2 ? 'l' : 'b'
-    call setreg(a:register, new, type)
+    call setreg(R, new, type)
   endif
 
-  if !s:is_registered(a:default, a:register)
+  bw!
+  if !s:is_registered(default, R, ft)
     redraw
-    echo '[ftmacros] macro for register' a:register 'has been edited, but is currently not registered'
+    echo '[ftmacros] macro for register' R 'has been edited, but is currently not registered'
     return
   endif
 
-  if a:default       | let g:ftmacros.default[a:register] = new
-  elseif !empty(&ft) | let g:ftmacros[&ft][a:register] = new
-  else               | let g:ftmacros.noft[a:register] = new
+  if default        | let g:ftmacros.default[R] = new
+  elseif !empty(ft) | let g:ftmacros[ft][R] = new
+  else              | let g:ftmacros.noft[R] = new
   endif
 
   call s:update_buffer()
 
-  if a:default
-    echo '[ftmacros] default macro for register' a:register 'has been updated'
-  elseif !empty(&ft)
-    echo '[ftmacros] macro for register' a:register 'and filetype' &ft 'has been updated'
+  if default
+    echo '[ftmacros] default macro for register' R 'has been updated'
+  elseif !empty(ft)
+    echo '[ftmacros] macro for register' R 'and filetype' ft 'has been updated'
   else
-    echo '[ftmacros] macro for register' a:register 'and no filetype has been updated'
+    echo '[ftmacros] macro for register' R 'and no filetype has been updated'
   endif
 endfun
 
@@ -176,7 +191,7 @@ endfun
 fun! s:buffer_cmd(cmd, ...)
   if has_key(b:ftmacros, line('.'))
     let R = b:ftmacros[line('.')]
-    exe printf('call ftmacros#%s(%s, "%s")', a:cmd, R[0]=='default', R[1])
+    exe printf('call ftmacros#%s(%s, "%s", "%s")', a:cmd, R[0]=='default', R[1], R[0])
   else
     call s:warn('Wrong line')
   endif
@@ -203,43 +218,11 @@ endfun
 
 "------------------------------------------------------------------------------
 
-fun! s:is_registered(default, register) abort
+fun! s:is_registered(default, register, ft) abort
   """Return true if the macro is in the g:ftmacros register.
   return  a:default && has_key(g:ftmacros.default, a:register) ||
-        \ !empty(&ft) && has_key(g:ftmacros, &ft) && has_key(g:ftmacros[&ft], a:register) ||
-        \ empty(&ft) && has_key(g:ftmacros.noft, a:register)
-endfun
-
-"------------------------------------------------------------------------------
-
-fun! s:special(key, val)
-  return "\<C-" . nr2char(a:val) . ">"
-endfun
-
-fun! s:non_special(key, val)
-  return '\\<C-' . nr2char(a:val) . '>'
-endfun
-
-fun! s:convert_from_special(text) abort
-  let converted = substitute(a:text,"\<Esc>",'\\<Esc>','g')
-  let converted = substitute(converted,"\<BS>",'\\<BS>','g')
-  let converted = substitute(converted,"\<C-R>",'\\<C-R>','g')
-  let converted = substitute(converted,"\<C-_>",'\\<C-_>','g')
-  let converted = substitute(converted,"\<C-M>",'\\<C-M>','g')
-  let converted = substitute(converted,"\<C-J>",'\\<C-J>','g')
-  return converted
-endfun
-
-"------------------------------------------------------------------------------
-
-fun! s:convert_to_special(text) abort
-  let converted = substitute(a:text,'\\<Esc>',"\<Esc>",'g')
-  let converted = substitute(converted,'\\<BS>',"\<BS>",'g')
-  let converted = substitute(converted,'\\<C-R>',"\<C-R>",'g')
-  let converted = substitute(converted,'\\<C-_>',"\<C-_>",'g')
-  let converted = substitute(converted,'\\<C-M>',"\<C-M>",'g')
-  let converted = substitute(converted,'\\<C-J>',"\<C-J>",'g')
-  return converted
+        \ !empty(a:ft) && has_key(g:ftmacros, a:ft) && has_key(g:ftmacros[a:ft], a:register) ||
+        \ empty(a:ft) && has_key(g:ftmacros.noft, a:register)
 endfun
 
 "------------------------------------------------------------------------------
