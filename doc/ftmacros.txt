@@ -39,7 +39,7 @@ COMMANDS                                                     *ftmacros-commands*
 ==============================================================================
 
                                                                   *:SaveMacro*
-:SaveMacro[!] {register}
+:SaveMacro[!] {register} [as {register}]
 
 Save macro stored in {register}, for current filetype. The next time that
 a file of the same type will be loaded, that macro will be loaded too.
@@ -47,6 +47,11 @@ a file of the same type will be loaded, that macro will be loaded too.
 If <bang> is used, then a default macro is saved: this means that this macro
 will always be loaded for any filetype, replacing anything that register
 contains. Filetype-specific macros have higher precedence, though.
+
+If an additional argument is provided after the word 'as', the macro will be
+saved under a different register. Example:
+>
+  :SaveMacro q as e       (saves macro 'q' in the 'e' saved register)
 
 -------------------------------------------------------------------------------
                                                                    *:EditMacro*

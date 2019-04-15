@@ -6,28 +6,21 @@ fun! ftmacros#save(default, args, ...)
   endif
 
   try
-    let args = split(a:args)
-    if match(args[0], 'ft=') >= 0
-      let ft = substitute(args[0], 'ft=', '', '')
-      let reg = args[1]
-    else
-      let ft = &ft
-      let reg = args[0]
-    endif
+    let [ft, src, dest] = s:parse_save_args(a:args)
 
-    if !s:valid(reg) | return | endif
-    let registered = s:is_registered(a:default, reg, ft)
+    if !s:valid(src) | return | endif
+    let registered = s:is_registered(a:default, src, ft)
 
     if a:default
-      let g:ftmacros.default[reg] = getreg(reg)
+      let g:ftmacros.default[dest] = getreg(src)
     elseif !empty(ft)
       if !has_key(g:ftmacros, ft)
-        let g:ftmacros[ft] = { reg: getreg(reg) }
+        let g:ftmacros[ft] = { dest: getreg(src) }
       else
-        let g:ftmacros[ft][reg] = getreg(reg)
+        let g:ftmacros[ft][dest] = getreg(src)
       endif
     else
-      let g:ftmacros.noft[reg] = getreg(reg)
+      let g:ftmacros.noft[dest] = getreg(src)
     endif
   catch
     return s:warn('[ftmacros] error while saving macro')
@@ -41,11 +34,11 @@ fun! ftmacros#save(default, args, ...)
   let s = registered ? 'updated' : 'saved'
 
   if a:default
-    echo '[ftmacros]' n.'default macro for register' reg 'has been' s
+    echo '[ftmacros]' n.'default macro for register' dest 'has been' s
   elseif !empty(ft)
-    echo '[ftmacros]' n.'macro for register' reg 'and filetype' ft 'has been' s
+    echo '[ftmacros]' n.'macro for register' dest 'and filetype' ft 'has been' s
   else
-    echo '[ftmacros]' n.'macro for register' reg 'and no filetype has been' s
+    echo '[ftmacros]' n.'macro for register' dest 'and no filetype has been' s
   endif
 endfun
 
@@ -355,7 +348,7 @@ endfun
 
 fun! s:valid(reg)
   let valid = map(range(97, 122) + range(48, 57), 'nr2char(v:val)')
-  if index(valid, a:reg) < 0
+  if index(valid, a:reg) < 0 || empty(getreg(a:reg))
     return s:warn('[ftmacros] wrong or empty register')
   endif
   return 1
@@ -374,6 +367,27 @@ endfun
 
 fun! s:writefile() abort
   return writefile(['let g:ftmacros = '.string(g:ftmacros)], fnamemodify(g:ftmacros_file, ':p')) == 0
+endfun
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+fun! s:parse_save_args(args)
+  let args = split(a:args)
+  if index(args, 'as') >= 0
+    call remove(args, index(args, 'as'))
+  endif
+  if match(args[0], 'ft=') >= 0
+    let ft = substitute(args[0], 'ft=', '', '')
+    call remove(args, 0)
+  else
+    let ft = &ft
+  endif
+  if len(args) > 1
+    let [src, dest] = [args[0], args[1]]
+  else
+    let [src, dest] = [args[0], args[0]]
+  endif
+  return [ft, src, dest]
 endfun
 
 "------------------------------------------------------------------------------
