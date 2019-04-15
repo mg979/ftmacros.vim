@@ -38,7 +38,7 @@ Default is `~/.vim/.ftmacros` ( `~\vimfiles\ftmacros` in Windows ).
 COMMANDS                                                     *ftmacros-commands*
 ==============================================================================
 
-                                                                   *:SaveMacro*
+                                                                  *:SaveMacro*
 :SaveMacro[!] {register}
 
 Save macro stored in {register}, for current filetype. The next time that
@@ -48,7 +48,7 @@ If <bang> is used, then a default macro is saved: this means that this macro
 will always be loaded for any filetype, replacing anything that register
 contains. Filetype-specific macros have higher precedence, though.
 
-
+-------------------------------------------------------------------------------
                                                                    *:EditMacro*
 :EditMacro[!] {register}
 
@@ -59,21 +59,21 @@ file.
 If <bang> is used, then a default macro is edited, rather than
 a filetype-specific one.
 
-
+-------------------------------------------------------------------------------
                                                                   *:MoveMacro*
 :MoveMacro[!] [ft={filetype}] {old} {new}
 
 Move a macro, if it's been saved before. If <bang> is used, a default macro is
 moved, otherwise current filetype is used, unless `ft=` is used.
 
-
+-------------------------------------------------------------------------------
                                                                  *:DeleteMacro*
 :DeleteMacro[!] {register}
 
 Delete a macro, if it's been saved before. If <bang> is used, then a default
 macro is deleted, rather than a filetype-specific one.
 
-
+-------------------------------------------------------------------------------
                                                                   *:ListMacros*
 
 :ListMacros[!]
@@ -83,6 +83,15 @@ for all filetypes are shown.
 
 From inside this buffer, you can add new macros (add! saves them as default
 macros), or edit/delete/move macros.
+
+-------------------------------------------------------------------------------
+                                                              *:AnnotateMacro*
+:AnnotateMacro[!] {register} {note}
+
+Annotate the macro stored in {register}, for current filetype, or a default
+macro if <bang> is used.
+
+The annotation will be visible on the command line, in the ListMacros buffer.
 
 
 

@@ -186,6 +186,63 @@ endfun
 
 "------------------------------------------------------------------------------
 
+fun! ftmacros#annotate(default, args, ...)
+  if a:0    " called by buffer
+    let b = a:default ? '!' : ' ft='.a:1
+    call feedkeys("\<c-u>:display\<cr>:AnnotateMacro".b." ".a:args." ", 'n')
+    return
+  endif
+
+  try
+    let args = split(a:args)
+    if match(args[0], 'ft=') >= 0
+      let ft = substitute(args[0], 'ft=', '', '')
+      let reg = args[1]
+      let note = join(args[2:])
+    else
+      let ft = &ft
+      let reg = args[0]
+      let note = join(args[1:])
+    endif
+
+    if !s:is_registered(a:default, reg, ft)
+      return s:warn('[ftmacros] ff a valid macro')
+    endif
+    call s:set_annotation(a:default ? 'default' : empty(ft) ? 'noft' : ft, reg, note)
+  catch
+    return s:warn('[ftmacros] not a valid macro')
+  endtry
+
+  if !s:writefile() | return s:warn('[ftmacros] failed to write file!') | endif
+
+  call s:update_buffer()
+
+  if note == ''
+    echo '[ftmacros] annotation has been removed'
+  elseif a:default
+    echo '[ftmacros] default macro for register' reg 'has been annotated'
+  elseif !empty(ft)
+    echo '[ftmacros] macro for register' reg 'and filetype' ft 'has been annotated'
+  else
+    echo '[ftmacros] macro for register' reg 'and no filetype has been annotated'
+  endif
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:set_annotation(key, reg, note)
+  if !empty(a:note) && !has_key(g:ftmacros.annotations, a:key)
+    let g:ftmacros.annotations[a:key] = { reg: a:note }
+  elseif !empty(a:note)
+    let g:ftmacros.annotations[a:key][a:reg] = a:note
+  elseif empty(a:note) && has_key(g:ftmacros.annotations, a:key)
+        \ && has_key(g:ftmacros.annotations[a:key], a:reg)
+    unlet g:ftmacros.annotations[a:key][a:reg]
+  endif
+endfun
+
+"------------------------------------------------------------------------------
+
 fun! ftmacros#list(bang)
   if a:bang && g:ftmacros == {'default': {}} ||
         \ g:ftmacros.default == {} &&
@@ -202,8 +259,9 @@ fun! ftmacros#list(bang)
   nnoremap <buffer><nowait><silent> e :call <sid>buffer_cmd('edit')<cr>
   nnoremap <buffer><nowait><silent> d :call <sid>buffer_cmd('delete')<cr>
   nnoremap <buffer><nowait><silent> m :call <sid>buffer_cmd('move')<cr>
-  nnoremap <buffer><nowait><silent> a :call <sid>buffer_cmd('save', 0)<cr>
-  nnoremap <buffer><nowait><silent> A :call <sid>buffer_cmd('save', 1)<cr>
+  nnoremap <buffer><nowait><silent> a :call <sid>buffer_cmd('annotate')<cr>
+  nnoremap <buffer><nowait><silent> s :call <sid>buffer_cmd('save', 0)<cr>
+  nnoremap <buffer><nowait><silent> S :call <sid>buffer_cmd('save', 1)<cr>
   setf ftmacros
   syn clear
   syn match ftmacrosFt '^\S\+$'
@@ -216,31 +274,35 @@ fun! ftmacros#list(bang)
   endif
 
   let [ d1, d2 ] = ['%#TablineSel#', '%#Tabline#']
-  let &l:statusline = '%#DiffText# Registered macros '.d1.' q '.d2.
-        \' quit '.d1.' e '.d2.' edit '.d1.' a '.d2.' add '.d1.
-        \' A '.d2.' add! '.d1.' m '.d2.' move '.d1.' d '.d2.' delete %#TablineFill#'
+  let &l:statusline = '%#DiffText# Registered macros '.
+        \ d1.' q '.d2.' quit '.d1.' e '.d2.' edit '.d1.' a '.d2.' annotate '.
+        \ d1.' s '.d2.' save '.d1.' S '.d2.' save! '.d1.' m '.d2.' move '.d1.' d '.d2.' delete'.
+        \'%#TablineFill#'
   call s:fill_buffer()
 endfun
 
 "------------------------------------------------------------------------------
 
 fun! s:fill_buffer() abort
-  call append('$', "reg.\tnote\t\tmacro")
+  call append('$', "reg.\t\tmacro")
   call append('$', repeat('-', &columns-5).' ')
 
   for type in b:ftmacros.ft
-    if !has_key(g:ftmacros, type) || empty(g:ftmacros[type])
+    if !has_key(g:ftmacros, type)
+          \ || empty(g:ftmacros[type])
+          \ || type == 'annotations'
       continue
     endif
     call append('$', '')
     call append('$', type.':')
     for reg in keys(g:ftmacros[type])
-      call append('$', reg."\t\t\t".g:ftmacros[type][reg])
+      call append('$', reg."\t\t".g:ftmacros[type][reg])
       let b:ftmacros[line('$')-1] = [type, reg]
     endfor
   endfor
   call append('$', '')
   redraw!
+  au CursorMoved <buffer> call s:show_annotation()
   " go to the first macro
   normal! gg"_dd}}k
 endfun
@@ -255,12 +317,28 @@ fun! s:buffer_cmd(cmd, ...)
     let R = b:ftmacros[line('.')]
     if a:cmd == 'save'
       call ftmacros#save(0, '', R[0])
+    elseif a:cmd == 'annotate'
+      call ftmacros#annotate( R[0]=='default', R[1], '', R[0])
     else
       exe printf('call ftmacros#%s(%s, "%s", "%s")', a:cmd, R[0]=='default', R[1], R[0])
     endif
   else
     call s:warn('Wrong line')
   endif
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:show_annotation()
+  try
+    let R = b:ftmacros[line('.')]
+    let annotation = g:ftmacros.annotations[R[0]][R[1]]
+    if !empty(annotation)
+      echo printf('[%s] %s', R[1], annotation)
+    endif
+  catch
+    echo "\r"
+  endtry
 endfun
 
 "------------------------------------------------------------------------------
