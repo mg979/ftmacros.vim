@@ -135,8 +135,9 @@ endfun
 
 "------------------------------------------------------------------------------
 
-fun! ftmacros#list()
-  if g:ftmacros.default == {} &&
+fun! ftmacros#list(bang)
+  if a:bang && g:ftmacros == {'default': {}} ||
+        \ g:ftmacros.default == {} &&
         \ ( !has_key(g:ftmacros, &ft) && &ft != '' ) ||
         \ ( &ft == '' && g:ftmacros.noft == {} )
     return s:warn('[ftmacros] no saved macros')
@@ -155,7 +156,13 @@ fun! ftmacros#list()
   syn clear
   syn match ftmacrosFt '^\S\+$'
   hi def link ftmacrosFt Statement
-  let b:ftmacros = {'ft': ft}
+
+  if a:bang
+    let b:ftmacros = {'ft': keys(g:ftmacros), 'list_all': 1}
+  else
+    let b:ftmacros = {'ft': ['default', ft], 'list_all': 0}
+  endif
+
   let [ d1, d2 ] = ['%#TablineSel#', '%#Tabline#']
   let &l:statusline = '%#DiffText# Registered macros '.d1.' q '.d2.
         \' quit '.d1.' e '.d2.' edit '.d1.' a '.d2.' add '.d1.
@@ -169,7 +176,7 @@ fun! s:fill_buffer() abort
   call append('$', "reg.\tnote\t\tmacro")
   call append('$', repeat('-', &columns-5).' ')
 
-  for type in ['default', b:ftmacros.ft]
+  for type in b:ftmacros.ft
     if !has_key(g:ftmacros, type) || empty(g:ftmacros[type])
       continue
     endif
@@ -201,8 +208,9 @@ endfun
 
 fun! s:update_buffer()
   if getbufvar(bufnr('%'), 'ftmacros', {}) != {}
+    let all = b:ftmacros.list_all
     q
-    call ftmacros#list()
+    call ftmacros#list(all)
   endif
 endfun
 

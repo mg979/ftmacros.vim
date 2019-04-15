@@ -66,10 +66,10 @@ macro is deleted, rather than a filetype-specific one.
 
                                                                   *:ListMacros*
 
-:ListMacros
+:ListMacros[!]
 
 List your saved macros in a special buffer. You can also edit/add/delete them.
-
+If <bang> is used, then all macros for all filetypes are shown.
 
 
 
