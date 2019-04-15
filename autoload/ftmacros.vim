@@ -1,54 +1,65 @@
-fun! ftmacros#save(default, register, ...)
+fun! ftmacros#save(default, args, ...)
   if a:0    " called by buffer
-    let b = a:default ? '!' : ''
-    call feedkeys("\<c-u>:display\<cr>:SaveMacro ", 'n')
+    let b = a:default ? '!' : ' ft='.a:1
+    call feedkeys("\<c-u>:display\<cr>:SaveMacro".b." ", 'n')
     return
   endif
 
-  if !s:valid(a:register) | return | endif
-
-  let registered = s:is_registered(a:default, a:register, a:0 ? a:1 : &ft)
-
-  if a:default
-    let g:ftmacros.default[a:register] = getreg(a:register)
-  elseif !empty(&ft)
-    if !has_key(g:ftmacros, &ft)
-      let g:ftmacros[&ft] = { a:register: getreg(a:register) }
-    else
-      let g:ftmacros[&ft][a:register] = getreg(a:register)
-    endif
-  else
-    let g:ftmacros.noft[a:register] = getreg(a:register)
-  endif
-
   try
-    call writefile(['let g:ftmacros = '.string(g:ftmacros)], fnamemodify(g:ftmacros_file, ':p'))
+    let args = split(a:args)
+    if match(args[0], 'ft=') >= 0
+      let ft = substitute(args[0], 'ft=', '', '')
+      let reg = args[1]
+    else
+      let ft = &ft
+      let reg = args[0]
+    endif
+
+    if !s:valid(reg) | return | endif
+    let registered = s:is_registered(a:default, reg, ft)
+
+    if a:default
+      let g:ftmacros.default[reg] = getreg(reg)
+    elseif !empty(ft)
+      if !has_key(g:ftmacros, ft)
+        let g:ftmacros[ft] = { reg: getreg(reg) }
+      else
+        let g:ftmacros[ft][reg] = getreg(reg)
+      endif
+    else
+      let g:ftmacros.noft[reg] = getreg(reg)
+    endif
   catch
-    return s:warn('[ftmacros] failed to write file!')
+    return s:warn('[ftmacros] error while saving macro')
   endtry
+
+  if !s:writefile() | return s:warn('[ftmacros] failed to write file!') | endif
 
   call s:update_buffer()
 
-  let n = registered ? 'new' : ''
+  let n = registered ? '' : 'new '
   let s = registered ? 'updated' : 'saved'
 
   if a:default
-    echo '[ftmacros]' n 'default macro for register' a:register 'has been' s
-  elseif !empty(&ft)
-    echo '[ftmacros]' n 'macro for register' a:register 'and filetype' &ft 'has been' s
+    echo '[ftmacros]' n.'default macro for register' reg 'has been' s
+  elseif !empty(ft)
+    echo '[ftmacros]' n.'macro for register' reg 'and filetype' ft 'has been' s
   else
-    echo '[ftmacros]' n 'macro for register' a:register 'and no filetype has been' s
+    echo '[ftmacros]' n.'macro for register' reg 'and no filetype has been' s
   endif
 endfun
 
 "------------------------------------------------------------------------------
 
 fun! ftmacros#delete(default, register, ...)
+  if confirm('Confirm?', "&Yes\n&No", 1) != 1 | return | endif
+
   try
+    let ft = a:0 ? a:1 : &ft
     if a:default
       unlet g:ftmacros.default[a:register]
-    elseif !empty(&ft)
-      unlet g:ftmacros[&ft][a:register]
+    elseif !empty(ft)
+      unlet g:ftmacros[ft][a:register]
     else
       unlet g:ftmacros.noft[a:register]
     endif
@@ -56,18 +67,14 @@ fun! ftmacros#delete(default, register, ...)
     return s:warn('[ftmacros] not a valid macro')
   endtry
 
-  try
-    call writefile(['let g:ftmacros = '.string(g:ftmacros)], fnamemodify(g:ftmacros_file, ':p'))
-  catch
-    return s:warn('[ftmacros] failed to write file!')
-  endtry
+  if !s:writefile() | return s:warn('[ftmacros] failed to write file!') | endif
 
   call s:update_buffer()
 
   if a:default
     echo '[ftmacros] default macro for register' a:register 'has been deleted'
-  elseif !empty(&ft)
-    echo '[ftmacros] macro for register' a:register 'and filetype' &ft 'has been deleted'
+  elseif !empty(ft)
+    echo '[ftmacros] macro for register' a:register 'and filetype' ft 'has been deleted'
   else
     echo '[ftmacros] macro for register' a:register 'and no filetype has been deleted'
   endif
@@ -135,6 +142,50 @@ endfun
 
 "------------------------------------------------------------------------------
 
+fun! ftmacros#move(default, args, ...)
+  if a:0    " called by buffer
+    let b = a:default ? '!' : ' ft='.a:1
+    call feedkeys("\<c-u>:display\<cr>:MoveMacro".b." ".a:args." ", 'n')
+    return
+  endif
+
+  try
+    if match(a:args, 'ft=') >= 0
+      let [ft, old, new] = split(a:args)
+      let ft = substitute(ft, 'ft=', '', '')
+    else
+      let ft = &ft
+      let [old, new] = split(a:args)
+    endif
+    if a:default
+      let g:ftmacros.default[new] = copy(g:ftmacros.default[old])
+      unlet g:ftmacros.default[old]
+    elseif !empty(ft)
+      let g:ftmacros[ft][new] = copy(g:ftmacros[ft][old])
+      unlet g:ftmacros[ft][old]
+    else
+      let g:ftmacros.noft[new] = copy(g:ftmacros.noft[old])
+      unlet g:ftmacros.noft[old]
+    endif
+  catch
+    return s:warn('[ftmacros] not a valid macro')
+  endtry
+
+  if !s:writefile() | return s:warn('[ftmacros] failed to write file!') | endif
+
+  call s:update_buffer()
+
+  if a:default
+    echo '[ftmacros] default macro for register' old 'has been moved to register' new
+  elseif !empty(ft)
+    echo '[ftmacros] macro for register' old 'and filetype' ft 'has been moved to register' new
+  else
+    echo '[ftmacros] macro for register' old 'and no filetype has been moved to register' new
+  endif
+endfun
+
+"------------------------------------------------------------------------------
+
 fun! ftmacros#list(bang)
   if a:bang && g:ftmacros == {'default': {}} ||
         \ g:ftmacros.default == {} &&
@@ -150,8 +201,9 @@ fun! ftmacros#list(bang)
   nnoremap <buffer><nowait><silent> q :q!<cr>
   nnoremap <buffer><nowait><silent> e :call <sid>buffer_cmd('edit')<cr>
   nnoremap <buffer><nowait><silent> d :call <sid>buffer_cmd('delete')<cr>
-  nnoremap <buffer><nowait><silent> a :call ftmacros#save(0, v:register, 1)<cr>
-  nnoremap <buffer><nowait><silent> A :call ftmacros#save(1, v:register, 1)<cr>
+  nnoremap <buffer><nowait><silent> m :call <sid>buffer_cmd('move')<cr>
+  nnoremap <buffer><nowait><silent> a :call <sid>buffer_cmd('save', 0)<cr>
+  nnoremap <buffer><nowait><silent> A :call <sid>buffer_cmd('save', 1)<cr>
   setf ftmacros
   syn clear
   syn match ftmacrosFt '^\S\+$'
@@ -166,7 +218,7 @@ fun! ftmacros#list(bang)
   let [ d1, d2 ] = ['%#TablineSel#', '%#Tabline#']
   let &l:statusline = '%#DiffText# Registered macros '.d1.' q '.d2.
         \' quit '.d1.' e '.d2.' edit '.d1.' a '.d2.' add '.d1.
-        \' A '.d2.' add! '.d1.' d '.d2.' delete %#TablineFill#'
+        \' A '.d2.' add! '.d1.' m '.d2.' move '.d1.' d '.d2.' delete %#TablineFill#'
   call s:fill_buffer()
 endfun
 
@@ -196,9 +248,16 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! s:buffer_cmd(cmd, ...)
+  if a:cmd == 'save' && a:1
+    return ftmacros#save(1, '', 1)
+  endif
   if has_key(b:ftmacros, line('.'))
     let R = b:ftmacros[line('.')]
-    exe printf('call ftmacros#%s(%s, "%s", "%s")', a:cmd, R[0]=='default', R[1], R[0])
+    if a:cmd == 'save'
+      call ftmacros#save(0, '', R[0])
+    else
+      exe printf('call ftmacros#%s(%s, "%s", "%s")', a:cmd, R[0]=='default', R[1], R[0])
+    endif
   else
     call s:warn('Wrong line')
   endif
@@ -228,9 +287,15 @@ endfun
 
 fun! s:is_registered(default, register, ft) abort
   """Return true if the macro is in the g:ftmacros register.
-  return  a:default && has_key(g:ftmacros.default, a:register) ||
-        \ !empty(a:ft) && has_key(g:ftmacros, a:ft) && has_key(g:ftmacros[a:ft], a:register) ||
-        \ empty(a:ft) && has_key(g:ftmacros.noft, a:register)
+  return  ( a:default && has_key(g:ftmacros.default, a:register) ) ||
+        \ ( !empty(a:ft) && has_key(g:ftmacros, a:ft) && has_key(g:ftmacros[a:ft], a:register) ) ||
+        \ ( empty(a:ft) && has_key(g:ftmacros.noft, a:register) )
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:writefile() abort
+  return writefile(['let g:ftmacros = '.string(g:ftmacros)], fnamemodify(g:ftmacros_file, ':p')) == 0
 endfun
 
 "------------------------------------------------------------------------------

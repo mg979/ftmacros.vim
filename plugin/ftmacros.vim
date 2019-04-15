@@ -40,6 +40,7 @@ endif
 
 command! -bang -nargs=1 SaveMacro   call ftmacros#save(<bang>0, <q-args>)
 command! -bang -nargs=1 EditMacro   call ftmacros#edit(<bang>0, <q-args>)
+command! -bang -nargs=1 MoveMacro   call ftmacros#move(<bang>0, <q-args>)
 command! -bang -nargs=1 DeleteMacro call ftmacros#delete(<bang>0, <q-args>)
 command! -bang          ListMacros  call ftmacros#list(<bang>0)
 

@@ -48,6 +48,7 @@ If <bang> is used, then a default macro is saved: this means that this macro
 will always be loaded for any filetype, replacing anything that register
 contains. Filetype-specific macros have higher precedence, though.
 
+
                                                                    *:EditMacro*
 :EditMacro[!] {register}
 
@@ -58,18 +59,30 @@ file.
 If <bang> is used, then a default macro is edited, rather than
 a filetype-specific one.
 
+
+                                                                  *:MoveMacro*
+:MoveMacro[!] [ft={filetype}] {old} {new}
+
+Move a macro, if it's been saved before. If <bang> is used, a default macro is
+moved, otherwise current filetype is used, unless `ft=` is used.
+
+
                                                                  *:DeleteMacro*
 :DeleteMacro[!] {register}
 
 Delete a macro, if it's been saved before. If <bang> is used, then a default
 macro is deleted, rather than a filetype-specific one.
 
+
                                                                   *:ListMacros*
 
 :ListMacros[!]
 
-List your saved macros in a special buffer. You can also edit/add/delete them.
-If <bang> is used, then all macros for all filetypes are shown.
+List your saved macros in a special buffer. If <bang> is used, then all macros
+for all filetypes are shown.
+
+From inside this buffer, you can add new macros (add! saves them as default
+macros), or edit/delete/move macros.
 
 
 
