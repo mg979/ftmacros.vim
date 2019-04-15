@@ -1,0 +1,84 @@
+*ftmacros.txt*    ftmacros.vim     Version 0.1.0    Last change: lun 15 apr 2019
+
+FTMACROS - TABLE OF CONTENTS                         *ftmacros-vim* *ftmacros-toc*
+==============================================================================
+
+    Features                              |ftmacros-features|
+    Options                               |ftmacros-options|
+    Commands                              |ftmacros-commands|
+    License                               |ftmacros-license|
+
+
+
+
+FEATURES                                                     *ftmacros-features*
+==============================================================================
+
+This plugin lets you:
+
+- have different sets of macros that are automatically loaded with filetypes
+- edit any macro (or vim register) in a buffer
+- list saved macros in a special buffer
+
+
+
+
+OPTIONS                                                       *ftmacros-options*
+==============================================================================
+
+                                                             *g:ftmacros_file*
+In this file will be stored your saved macros.
+Default is `~/.vim/.ftmacros` ( `~\vimfiles\ftmacros` in Windows ).
+
+
+
+
+
+
+COMMANDS                                                     *ftmacros-commands*
+==============================================================================
+
+                                                                   *:SaveMacro*
+:SaveMacro[!] {register}
+
+Save macro stored in {register}, for current filetype. The next time that
+a file of the same type will be loaded, that macro will be loaded too.
+
+If <bang> is used, then a default macro is saved: this means that this macro
+will always be loaded for any filetype, replacing anything that register
+contains. Filetype-specific macros have higher precedence, though.
+
+                                                                   *:EditMacro*
+:EditMacro[!] {register}
+
+Edit a macro in a buffer. Save the buffer to update the macro.
+You can edit any macro (or register), even if it's not saved in your ftmacros
+file.
+
+If <bang> is used, then a default macro is edited, rather than
+a filetype-specific one.
+
+                                                                 *:DeleteMacro*
+:DeleteMacro[!] {register}
+
+Delete a macro, if it's been saved before. If <bang> is used, then a default
+macro is deleted, rather than a filetype-specific one.
+
+                                                                  *:ListMacros*
+
+:ListMacros
+
+List your saved macros in a special buffer. You can also edit/add/delete them.
+
+
+
+
+
+
+LICENSE                                                       *ftmacros-license*
+==============================================================================
+
+MIT
+
+
+vim:tw=78:sw=2:ts=2:ft=help:norl:nowrap:

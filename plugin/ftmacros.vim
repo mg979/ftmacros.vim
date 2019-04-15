@@ -11,7 +11,11 @@ if exists('g:loaded_ftmacros') | finish | endif
 
 " settings file must exist to continue
 
-if !exists('g:ftmacros_file') || !filereadable(fnamemodify(g:ftmacros_file, ':p'))
+if !exists('g:ftmacros_file')
+  let g:ftmacros_file = has('win32') ? '~\vimfiles\.ftmacros.vim' : '~/.vim/.ftmacros.vim'
+endif
+
+if !filereadable(fnamemodify(g:ftmacros_file, ':p'))
   if writefile([], fnamemodify(g:ftmacros_file, ':p')) < 0
     echomsg "[ftmacros] Could not create settings file, define it in g:ftmacros_file"
     finish

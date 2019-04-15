@@ -137,8 +137,8 @@ endfun
 
 fun! ftmacros#list()
   if g:ftmacros.default == {} &&
-        \ ( !has_key(g:ftmacros, &ft) && &ft != ''
-        \ || &ft == '' && g:ftmacros.noft == {} )
+        \ ( !has_key(g:ftmacros, &ft) && &ft != '' ) ||
+        \ ( &ft == '' && g:ftmacros.noft == {} )
     return s:warn('[ftmacros] no saved macros')
   endif
 
