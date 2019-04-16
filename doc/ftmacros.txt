@@ -16,9 +16,10 @@ FEATURES                                                     *ftmacros-features*
 
 This plugin lets you:
 
-- have different sets of macros that are automatically loaded with filetypes
+- have different sets of macros that are automatically applied with filetypes
 - edit any macro (or vim register) in a buffer
 - list saved macros in a special buffer
+- move/delete/annotate macros
 
 
 
@@ -90,6 +91,13 @@ From inside this buffer, you can add new macros (add! saves them as default
 macros), or edit/delete/move macros.
 
 -------------------------------------------------------------------------------
+                                                                  *:ShowMacros*
+
+:ShowMacros
+
+Same as |:registers|, but on a side scratch buffer.
+
+-------------------------------------------------------------------------------
                                                               *:AnnotateMacro*
 :AnnotateMacro[!] {register} {note}
 
@@ -97,6 +105,7 @@ Annotate the macro stored in {register}, for current filetype, or a default
 macro if <bang> is used.
 
 The annotation will be visible on the command line, in the ListMacros buffer.
+The command will fail if the macro hasn't been saved.
 
 
 

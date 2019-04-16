@@ -199,7 +199,7 @@ fun! ftmacros#annotate(default, args, ...)
     endif
 
     if !s:is_registered(a:default, reg, ft)
-      return s:warn('[ftmacros] ff a valid macro')
+      return s:warn('[ftmacros] not a valid macro')
     endif
     call s:set_annotation(a:default ? 'default' : empty(ft) ? 'noft' : ft, reg, note)
   catch
@@ -282,12 +282,13 @@ fun! ftmacros#show(...)
   redir @"
   silent display
   redir END
-  topleft vnew
+  let pos = s:ftmacros_win() ? 'aboveleft': 'topleft'
+  exe pos 'vnew'
   setf ftmacros_regs
   setlocal nonumber
   setlocal bt=nofile bh=wipe noswf nobl
-  put =@"
-  1,3d _
+  silent put =@"
+  silent 1,3d _
   keeppatterns g/^/normal! x
   nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
   syntax match ftmacrosReg  '^.'
@@ -304,18 +305,30 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! s:quit() abort
+  if s:regs_win()
+    exe s:regs_win()."bw"
+    if s:ftmacros_win()
+      exe (index(tabpagebuflist(), s:ftmacros_win())+1)."wincmd w"
+    endif
+    return
+  endif
+  bw
+endfun
+
+fun! s:regs_win()
   for buf in tabpagebuflist()
     if getbufvar(buf, '&ft', '') == 'ftmacros_regs'
-      exe buf."bw"
-      for buf in tabpagebuflist()
-        if getbufvar(buf, '&ft', '') == 'ftmacros'
-          exe (index(tabpagebuflist(), buf)+1)."wincmd w"
-        endif
-      endfor
-      return
+      return buf
     endif
   endfor
-  bw
+endfun
+
+fun! s:ftmacros_win()
+  for buf in tabpagebuflist()
+    if getbufvar(buf, '&ft', '') == 'ftmacros'
+      return buf
+    endif
+  endfor
 endfun
 
 "------------------------------------------------------------------------------
@@ -341,7 +354,7 @@ fun! s:fill_buffer() abort
   redraw!
   au CursorMoved <buffer> call s:show_annotation()
   " go to the first macro
-  normal! gg"_dd}}k
+  normal! gg"_dd}jj
 endfun
 
 "------------------------------------------------------------------------------
