@@ -238,9 +238,9 @@ endfun
 
 fun! ftmacros#list(bang)
   if a:bang && g:ftmacros == {'default': {}} ||
-        \ g:ftmacros.default == {} &&
+        \ !a:bang && ( g:ftmacros.default == {} &&
         \ ( !has_key(g:ftmacros, &ft) && &ft != '' ) ||
-        \ ( &ft == '' && g:ftmacros.noft == {} )
+        \ ( &ft == '' && g:ftmacros.noft == {} ) )
     return s:warn('[ftmacros] no saved macros')
   endif
 
@@ -248,13 +248,14 @@ fun! ftmacros#list(bang)
 
   new
   setlocal bt=nofile bh=wipe noswf nobl ts=8 noet nowrap
-  nnoremap <buffer><nowait><silent> q :q!<cr>
+  nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
   nnoremap <buffer><nowait><silent> e :call <sid>buffer_cmd('edit')<cr>
   nnoremap <buffer><nowait><silent> d :call <sid>buffer_cmd('delete')<cr>
   nnoremap <buffer><nowait><silent> m :call <sid>buffer_cmd('move')<cr>
   nnoremap <buffer><nowait><silent> a :call <sid>buffer_cmd('annotate')<cr>
   nnoremap <buffer><nowait><silent> s :call <sid>buffer_cmd('save', 0)<cr>
   nnoremap <buffer><nowait><silent> S :call <sid>buffer_cmd('save', 1)<cr>
+  nnoremap <buffer><nowait><silent> r :call ftmacros#show(1)<cr>
   setf ftmacros
   syn clear
   syn match ftmacrosFt '^\S\+$'
@@ -268,10 +269,53 @@ fun! ftmacros#list(bang)
 
   let [ d1, d2 ] = ['%#TablineSel#', '%#Tabline#']
   let &l:statusline = '%#DiffText# Registered macros '.
-        \ d1.' q '.d2.' quit '.d1.' e '.d2.' edit '.d1.' a '.d2.' annotate '.
+        \ d1.' q '.d2.' quit '.d1.' r '.d2.' registers '.d1.' e '.d2.' edit '.d1.' a '.d2.' annotate '.
         \ d1.' s '.d2.' save '.d1.' S '.d2.' save! '.d1.' m '.d2.' move '.d1.' d '.d2.' delete'.
         \'%#TablineFill#'
   call s:fill_buffer()
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! ftmacros#show(...)
+  let r = [ getreg('"'), getregtype('"') ]
+  redir @"
+  silent display
+  redir END
+  topleft vnew
+  setf ftmacros_regs
+  setlocal nonumber
+  setlocal bt=nofile bh=wipe noswf nobl
+  put =@"
+  1,3d _
+  keeppatterns g/^/normal! x
+  nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
+  syntax match ftmacrosReg  '^.'
+  hi def link ftmacrosReg Statement
+  1
+  setlocal nomodifiable
+  call setreg('"', r[0], r[1])
+  let &l:statusline = '%#DiffText# Registers'
+  if a:0
+    wincmd p
+  endif
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:quit() abort
+  for buf in tabpagebuflist()
+    if getbufvar(buf, '&ft', '') == 'ftmacros_regs'
+      exe buf."bw"
+      for buf in tabpagebuflist()
+        if getbufvar(buf, '&ft', '') == 'ftmacros'
+          exe (index(tabpagebuflist(), buf)+1)."wincmd w"
+        endif
+      endfor
+      return
+    endif
+  endfor
+  bw
 endfun
 
 "------------------------------------------------------------------------------
@@ -311,7 +355,7 @@ fun! s:buffer_cmd(cmd, ...)
     if a:cmd == 'save'
       call ftmacros#save(0, '', R[0])
     elseif a:cmd == 'annotate'
-      call ftmacros#annotate( R[0]=='default', R[1], '', R[0])
+      call ftmacros#annotate(R[0]=='default', R[1], R[0])
     else
       exe printf('call ftmacros#%s(%s, "%s", "%s")', a:cmd, R[0]=='default', R[1], R[0])
     endif
