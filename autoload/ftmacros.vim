@@ -246,7 +246,7 @@ fun! ftmacros#list(bang)
 
   let ft = empty(&ft) ? 'noft' : &ft
 
-  new
+  botright new
   setlocal bt=nofile bh=wipe noswf nobl ts=8 noet nowrap
   nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
   nnoremap <buffer><nowait><silent> e :call <sid>buffer_cmd('edit')<cr>
@@ -278,16 +278,12 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! ftmacros#show(...)
-  let r = [ getreg('"'), getregtype('"') ]
-  redir @"
-  silent display
-  redir END
   let pos = s:ftmacros_win() ? 'aboveleft': 'topleft'
   exe pos 'vnew'
   setf ftmacros_regs
   setlocal nonumber
   setlocal bt=nofile bh=wipe noswf nobl
-  silent put =@"
+  silent put =execute('registers')
   silent 1,3d _
   keeppatterns g/^/normal! x
   nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
@@ -295,7 +291,6 @@ fun! ftmacros#show(...)
   hi def link ftmacrosReg Statement
   1
   setlocal nomodifiable
-  call setreg('"', r[0], r[1])
   let &l:statusline = '%#DiffText# Registers'
   if a:0
     wincmd p
