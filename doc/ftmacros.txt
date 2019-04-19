@@ -28,8 +28,8 @@ OPTIONS                                                       *ftmacros-options*
 ==============================================================================
 
                                                              *g:ftmacros_file*
-In this file will be stored your saved macros.
-Default is `~/.vim/.ftmacros` ( `~\vimfiles\ftmacros` in Windows ).
+Your saved macros will be stored in this file.
+Default is `~/.vim/.ftmacros.vim` ( `~\vimfiles\.ftmacros.vim` in Windows ).
 
 
 
