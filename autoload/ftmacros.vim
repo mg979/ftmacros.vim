@@ -201,7 +201,7 @@ fun! ftmacros#annotate(default, args, ...)
     if !s:is_registered(a:default, reg, ft)
       return s:warn('[ftmacros] not a valid macro')
     endif
-    call s:set_annotation(a:default ? 'default' : empty(ft) ? 'noft' : ft, reg, note)
+    call s:set_annotation((a:default ? 'default' : empty(ft) ? 'noft' : ft), reg, note)
   catch
     return s:warn('[ftmacros] not a valid macro')
   endtry
@@ -225,7 +225,7 @@ endfun
 
 fun! s:set_annotation(key, reg, note)
   if !empty(a:note) && !has_key(g:ftmacros.annotations, a:key)
-    let g:ftmacros.annotations[a:key] = { reg: a:note }
+    let g:ftmacros.annotations[a:key] = { a:reg: a:note }
   elseif !empty(a:note)
     let g:ftmacros.annotations[a:key][a:reg] = a:note
   elseif empty(a:note) && has_key(g:ftmacros.annotations, a:key)
@@ -379,7 +379,10 @@ fun! s:show_annotation()
     let R = b:ftmacros[line('.')]
     let annotation = g:ftmacros.annotations[R[0]][R[1]]
     if !empty(annotation)
-      echo printf('[%s] %s', R[1], annotation)
+      echohl Statement
+      echo printf('[%s] ', R[1])
+      echohl None
+      echon annotation
     endif
   catch
     echo "\r"
