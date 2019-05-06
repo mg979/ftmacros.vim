@@ -287,7 +287,7 @@ fun! ftmacros#show(...)
   setlocal bt=nofile bh=wipe noswf nobl
   silent put =execute('registers')
   silent 1,3d _
-  keeppatterns g/^/normal! x
+  keeppatterns g/^/normal! "_x
   nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
   syntax match ftmacrosReg  '^.'
   hi def link ftmacrosReg Statement
