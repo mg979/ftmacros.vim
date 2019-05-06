@@ -278,8 +278,10 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! ftmacros#show(...)
-  let pos = s:ftmacros_win() ? 'aboveleft': 'topleft'
-  exe pos 'vnew'
+  " Called by ShowMacros, or when showing registers from inside ListMacros
+  let defpos = get(g:, 'ftmacros_regwin_position', 'botright new')
+  let pos = s:ftmacros_win() ? 'aboveleft vnew': defpos
+  exe pos
   setf ftmacros_regs
   setlocal nonumber
   setlocal bt=nofile bh=wipe noswf nobl
@@ -300,6 +302,7 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! s:quit() abort
+  " Close the ShowMacros buffer first (if open), then the ListMacros buffer
   if s:regs_win()
     exe s:regs_win()."bw"
     if s:ftmacros_win()
@@ -311,6 +314,7 @@ fun! s:quit() abort
 endfun
 
 fun! s:regs_win()
+  " Return the ShowMacros buffer if open, or 0
   for buf in tabpagebuflist()
     if getbufvar(buf, '&ft', '') == 'ftmacros_regs'
       return buf
@@ -319,6 +323,7 @@ fun! s:regs_win()
 endfun
 
 fun! s:ftmacros_win()
+  " Return the ListMacros buffer if open, or 0
   for buf in tabpagebuflist()
     if getbufvar(buf, '&ft', '') == 'ftmacros'
       return buf

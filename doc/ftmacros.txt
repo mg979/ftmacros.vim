@@ -4,8 +4,8 @@ FTMACROS - TABLE OF CONTENTS                                      *ftmacros-vim*
 ==============================================================================
 
     Features                              |ftmacros-features|
-    Options                               |ftmacros-options|
     Commands                              |ftmacros-commands|
+    Options                               |ftmacros-options|
     License                               |ftmacros-license|
 
 
@@ -20,18 +20,6 @@ This plugin lets you:
 - edit any macro (or vim register) in a buffer
 - list saved macros in a special buffer
 - move/delete/annotate macros
-
-
-
-
-OPTIONS                                                       *ftmacros-options*
-==============================================================================
-
-                                                             *g:ftmacros_file*
-Your saved macros will be stored in this file.
-Default is `~/.vim/.ftmacros.vim` ( `~\vimfiles\.ftmacros.vim` in Windows ).
-
-
 
 
 
@@ -102,6 +90,21 @@ macro if <bang> is used.
 
 The annotation will be visible on the command line, in the ListMacros buffer.
 The command will fail if the macro hasn't been saved.
+
+
+
+
+
+OPTIONS                                                       *ftmacros-options*
+==============================================================================
+
+                                                             *g:ftmacros_file*
+Your saved macros will be stored in this file.
+Default is `~/.vim/.ftmacros.vim` ( `~\vimfiles\.ftmacros.vim` in Windows ).
+
+                                                  *g:ftmacros_regwin_position*
+The position of the window when showing registers with the ShowMacros command.
+Default is `botright new` (same position as when running |:reg|).
 
 
 
