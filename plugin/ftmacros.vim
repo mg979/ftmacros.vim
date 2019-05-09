@@ -52,7 +52,7 @@ command! -bang -nargs=1 AnnotateMacro   call ftmacros#annotate(<bang>0, <q-args>
 
 augroup ftmacros
   au!
-  au Filetype * call s:load_ftmacros()
+  au Filetype,BufEnter * call s:load_ftmacros()
 augroup END
 
 "------------------------------------------------------------------------------

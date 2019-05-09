@@ -81,7 +81,7 @@ fun! ftmacros#edit(default, register, ...)
 endfun
 
 fun! s:macro_buffer(default, register, ft)
-  botright new ftmacro_edit
+  silent botright new ftmacro_edit
   setlocal bt=acwrite bh=wipe noswf nobl
   put =getreg(a:register)
   1d _
@@ -262,9 +262,9 @@ fun! ftmacros#list(bang)
   hi def link ftmacrosFt Statement
 
   if a:bang
-    let b:ftmacros = {'ft': keys(g:ftmacros), 'list_all': 1}
+    let b:ftmacros = {'ft': keys(g:ftmacros), 'list_all': 1, 'current_ft': ft}
   else
-    let b:ftmacros = {'ft': ['default', ft], 'list_all': 0}
+    let b:ftmacros = {'ft': ['default', ft], 'list_all': 0, 'current_ft': ft}
   endif
 
   let [ d1, d2 ] = ['%#TablineSel#', '%#Tabline#']
@@ -289,6 +289,7 @@ fun! ftmacros#show(...)
   silent 1,3d _
   keeppatterns g/^/normal! "_x
   nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
+  nnoremap <buffer><nowait><silent> <esc> :call <sid>quit()<cr>
   syntax match ftmacrosReg  '^.'
   hi def link ftmacrosReg Statement
   1
@@ -369,6 +370,8 @@ fun! s:buffer_cmd(cmd, ...)
       call ftmacros#save(0, '', R[0])
     elseif a:cmd == 'annotate'
       call ftmacros#annotate(R[0]=='default', R[1], R[0])
+    elseif a:cmd == 'edit' && b:ftmacros[line('.')][0] != b:ftmacros.current_ft
+      call s:warn("[ftmacros] This macro doesn't belong to this filetype and isn't currently loaded, it can't be edited.")
     else
       exe printf('call ftmacros#%s(%s, "%s", "%s")', a:cmd, R[0]=='default', R[1], R[0])
     endif
