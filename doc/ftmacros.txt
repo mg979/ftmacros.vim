@@ -79,7 +79,13 @@ From inside this buffer, you can also save/edit/delete/move/annotate macros.
                                                                   *:ShowMacros*
 :ShowMacros
 
-Same as |:registers|, but on a side scratch buffer.
+Same as |:registers|, but on a scratch buffer.
+
+By default, the buffer is positioned at the bottom, as the ex command would.
+Valid mappings inside this buffer:
+
+    q or <Esc>    quit
+    .             edit the register under cursor
 
 -------------------------------------------------------------------------------
                                                               *:AnnotateMacro*

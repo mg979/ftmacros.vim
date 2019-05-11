@@ -83,7 +83,7 @@ endfun
 fun! s:macro_buffer(default, register, ft)
   silent botright new ftmacro_edit
   setlocal bt=acwrite bh=wipe noswf nobl
-  put =getreg(a:register)
+  silent put =getreg(a:register)
   1d _
   set nomodified
   if line('$') < winheight(winnr())
@@ -111,6 +111,13 @@ fun! s:macro_write_back() abort
   endif
 
   bw!
+
+  " update ShowMacros buffer, if editing a magro from it
+  if &ft == 'ftmacros_regs'
+    q
+    ShowMacros
+  endif
+
   if !s:is_registered(default, R, ft)
     redraw
     echo '[ftmacros] macro for register' R 'has been edited, but is currently not registered'
@@ -288,8 +295,9 @@ fun! ftmacros#show(...)
   silent put =execute('registers')
   silent 1,3d _
   keeppatterns g/^/normal! "_x
-  nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
+  nnoremap <buffer><nowait><silent> q     :call <sid>quit()<cr>
   nnoremap <buffer><nowait><silent> <esc> :call <sid>quit()<cr>
+  nnoremap <buffer><nowait>         .     :EditMacro <C-R>=getline('.')[0]<cr><cr>
   syntax match ftmacrosReg  '^.'
   hi def link ftmacrosReg Statement
   1
