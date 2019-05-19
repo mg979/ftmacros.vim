@@ -99,7 +99,7 @@ endfun
 
 fun! s:macro_write_back() abort
   let [ R, default, ft ] = [ b:ftmacros.register, b:ftmacros.default, b:ftmacros.ft ]
-  let new = join(getline(1, '$'), '\n')
+  let new = join(getline(1, '$'), "\n")
   let type = getregtype(R) ==# 'v' ? 'char' : getregtype(R) ==# 'V' ? 'line' : 'block'
   if type == 'char'
     call setreg(R, new, 'v')
@@ -120,7 +120,7 @@ fun! s:macro_write_back() abort
 
   if !s:is_registered(default, R, ft)
     redraw
-    echo '[ftmacros] macro for register' R 'has been edited, but is currently not registered'
+    echo '[ftmacros] register' R 'has been edited, but is currently not registered'
     return
   endif
 
@@ -132,11 +132,11 @@ fun! s:macro_write_back() abort
   call s:update_buffer()
 
   if default
-    echo '[ftmacros] default macro for register' R 'has been updated'
+    echo '[ftmacros] default for register' R 'has been updated'
   elseif !empty(ft)
-    echo '[ftmacros] macro for register' R 'and filetype' ft 'has been updated'
+    echo '[ftmacros] register' R 'for filetype' ft 'has been updated'
   else
-    echo '[ftmacros] macro for register' R 'and no filetype has been updated'
+    echo '[ftmacros] register' R 'for no filetype has been updated'
   endif
 endfun
 
@@ -286,18 +286,23 @@ endfun
 
 fun! ftmacros#show(...)
   " Called by ShowMacros, or when showing registers from inside ListMacros
+  let regs = execute('registers')
+  let n = len(split(regs, '\n')) - 1
   let defpos = get(g:, 'ftmacros_regwin_position', 'botright new')
   let pos = s:ftmacros_win() ? 'aboveleft vnew': defpos
+  let pos = split(pos)
+  let pos = pos[0] . ' ' . n . pos[1]
   exe pos
   setf ftmacros_regs
   setlocal nonumber
   setlocal bt=nofile bh=wipe noswf nobl
-  silent put =execute('registers')
+  silent put =regs
   silent 1,3d _
   keeppatterns g/^/normal! "_x
-  nnoremap <buffer><nowait><silent> q     :call <sid>quit()<cr>
-  nnoremap <buffer><nowait><silent> <esc> :call <sid>quit()<cr>
-  nnoremap <buffer><nowait>         .     :EditMacro <C-R>=getline('.')[0]<cr><cr>
+  nnoremap <nowait><buffer>         <esc><esc>  <esc>
+  nnoremap <nowait><buffer><silent> q           :call <sid>quit()<cr>
+  nnoremap <nowait><buffer><silent> <esc>       :call <sid>quit()<cr>
+  nnoremap <nowait><buffer>         .           :EditMacro <C-R>=getline('.')[0]<cr><cr>
   syntax match ftmacrosReg  '^.'
   hi def link ftmacrosReg Statement
   1
@@ -418,7 +423,9 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! s:valid(reg)
-  let valid = map(range(97, 122) + range(48, 57), 'nr2char(v:val)')
+   " additional non-read-only registers: ", *, +, -, /, ~
+  let nro = [34, 42, 43, 45, 47, 126]
+  let valid = map(range(97, 122) + range(48, 57) + nro, 'nr2char(v:val)')
   if index(valid, a:reg) < 0 || empty(getreg(a:reg))
     return s:warn('[ftmacros] wrong or empty register')
   endif
