@@ -21,6 +21,8 @@ This plugin lets you:
 - list saved macros in a special buffer
 - move/delete/annotate macros
 
+Only |characterwise-register| are supported. Loaded registers are automatically
+set to this register type.
 
 
 

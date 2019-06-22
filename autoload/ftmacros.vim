@@ -11,16 +11,17 @@ fun! ftmacros#save(default, args, ...)
     if !s:valid(src) | return | endif
     let registered = s:is_registered(a:default, src, ft)
 
+    let reg = substitute(getreg(src), "\<NL>", '\r', 'g')
     if a:default
-      let g:ftmacros.default[dest] = getreg(src)
+      let g:ftmacros.default[dest] = reg
     elseif !empty(ft)
       if !has_key(g:ftmacros, ft)
-        let g:ftmacros[ft] = { dest: getreg(src) }
+        let g:ftmacros[ft] = { dest: reg }
       else
-        let g:ftmacros[ft][dest] = getreg(src)
+        let g:ftmacros[ft][dest] = reg
       endif
     else
-      let g:ftmacros.noft[dest] = getreg(src)
+      let g:ftmacros.noft[dest] = reg
     endif
   catch
     return s:warn('[ftmacros] error while saving macro')
@@ -128,6 +129,8 @@ fun! s:macro_write_back() abort
   elseif !empty(ft) | let g:ftmacros[ft][R] = new
   else              | let g:ftmacros.noft[R] = new
   endif
+
+  if !s:writefile() | return s:warn('[ftmacros] failed to write file!') | endif
 
   call s:update_buffer()
 
@@ -254,7 +257,7 @@ fun! ftmacros#list(bang)
   let ft = empty(&ft) ? 'noft' : &ft
 
   botright new
-  setlocal bt=nofile bh=wipe noswf nobl ts=8 noet nowrap
+  setlocal bt=nofile bh=wipe noswf nobl ts=8 noet nowrap tw=0
   nnoremap <buffer><nowait><silent> q :call <sid>quit()<cr>
   nnoremap <buffer><nowait><silent> e :call <sid>buffer_cmd('edit')<cr>
   nnoremap <buffer><nowait><silent> d :call <sid>buffer_cmd('delete')<cr>
