@@ -113,7 +113,7 @@ fun! s:macro_write_back() abort
 
   bw!
 
-  " update ShowMacros buffer, if editing a magro from it
+  " update ShowMacros buffer, if editing a macro from it
   if &ft == 'ftmacros_regs'
     q
     ShowMacros
@@ -266,7 +266,7 @@ fun! ftmacros#list(bang)
   nnoremap <buffer><nowait><silent> s :call <sid>buffer_cmd('save', 0)<cr>
   nnoremap <buffer><nowait><silent> S :call <sid>buffer_cmd('save', 1)<cr>
   nnoremap <buffer><nowait><silent> r :call ftmacros#show(1)<cr>
-  setf ftmacros
+  setfiletype ftmacros
   syn clear
   syn match ftmacrosFt '^\S\+$'
   hi def link ftmacrosFt Statement
@@ -296,7 +296,7 @@ fun! ftmacros#show(...)
   let pos = split(pos)
   let pos = pos[0] . ' ' . n . pos[1]
   exe pos
-  setf ftmacros_regs
+  setfiletype ftmacros_regs
   setlocal nonumber
   setlocal bt=nofile bh=wipe noswf nobl
   silent put =regs
@@ -307,7 +307,9 @@ fun! ftmacros#show(...)
   nnoremap <nowait><buffer><silent> <esc>       :call <sid>quit()<cr>
   nnoremap <nowait><buffer>         .           :EditMacro <C-R>=getline('.')[0]<cr><cr>
   syntax match ftmacrosReg  '^.'
+  syntax match ftmacrosSpecial  '\^\u\|\^\[\|\^@\|\^\^\|\^_'
   hi def link ftmacrosReg Statement
+  hi def link ftmacrosSpecial Special
   1
   setlocal nomodifiable
   let &l:statusline = '%#DiffText# Registers'
