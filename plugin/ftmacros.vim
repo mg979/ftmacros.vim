@@ -12,7 +12,7 @@ if exists('g:loaded_ftmacros') | finish | endif
 " settings file must exist to continue
 
 if !exists('g:ftmacros_file')
-  let g:ftmacros_file = has('win32') ? '~\vimfiles\.ftmacros.vim' : '~/.vim/.ftmacros.vim'
+  let g:ftmacros_file = has('win32') || has('win32unix') ? '~\\vimfiles\\.ftmacros.vim' : '~/.vim/.ftmacros.vim'
 endif
 
 if !filereadable(fnamemodify(g:ftmacros_file, ':p'))
