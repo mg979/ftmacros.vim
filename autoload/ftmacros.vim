@@ -301,18 +301,18 @@ fun! ftmacros#show(...)
   setlocal bt=nofile bh=wipe noswf nobl
   silent put =regs
   silent 1,3d _
-  keeppatterns g/^/normal! "_x
+  silent keeppatterns %s/^.\{-}"//
   nnoremap <nowait><buffer>         <esc><esc>  <esc>
   nnoremap <nowait><buffer><silent> q           :call <sid>quit()<cr>
   nnoremap <nowait><buffer><silent> <esc>       :call <sid>quit()<cr>
-  nnoremap <nowait><buffer>         .           :EditMacro <C-R>=matchstr(getline('.'), '\s*"\zs.\ze\s\+')<cr><cr>
+  nnoremap <nowait><buffer>         .           :EditMacro <C-R>=getline('.')[0]<cr><cr>
   syntax match ftmacrosReg  '^.'
-  syntax match ftmacrosSpecial  '\^\u\|\^\[\|\^@\|\^\^\|\^_'
+  syntax match ftmacrosSpecial  '\^[\]@A-Z]\|<\d\+><fc>\|<\d\+>\zekb'
   hi def link ftmacrosReg Statement
   hi def link ftmacrosSpecial Special
   1
   setlocal nomodifiable
-  let &l:statusline = '%#DiffText# Registers'
+  let &l:statusline = '%#StatusLineNOC# Registers %#TablineFill#'
   if a:0
     wincmd p
   endif
