@@ -80,8 +80,8 @@ for all filetypes are shown.
 From inside this buffer, you can also save/edit/delete/move/annotate macros.
 
 -------------------------------------------------------------------------------
-                                                                  *:ShowMacros*
-:ShowMacros
+																															 *:ShowRegisters*
+:ShowRegisters
 
 Same as |:registers|, but on a scratch buffer.
 
