@@ -305,7 +305,7 @@ fun! ftmacros#show(...)
   nnoremap <nowait><buffer>         <esc><esc>  <esc>
   nnoremap <nowait><buffer><silent> q           :call <sid>quit()<cr>
   nnoremap <nowait><buffer><silent> <esc>       :call <sid>quit()<cr>
-  nnoremap <nowait><buffer>         .           :EditMacro <C-R>=getline('.')[0]<cr><cr>
+  nnoremap <nowait><buffer>         .           :EditMacro <C-R>=matchstr(getline('.'), '\s*"\zs.\ze\s\+')<cr><cr>
   syntax match ftmacrosReg  '^.'
   syntax match ftmacrosSpecial  '\^\u\|\^\[\|\^@\|\^\^\|\^_'
   hi def link ftmacrosReg Statement
