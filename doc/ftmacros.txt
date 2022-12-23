@@ -21,9 +21,11 @@ This plugin lets you:
 - list saved macros in a special buffer
 - move/delete/annotate macros
 
-Only |characterwise-register| are supported. Loaded registers are automatically
-set to this register type.
+When registering macros, only |characterwise-register| is supported. Loaded
+macros are automatically set to this register type.
 
+When editing a vim register, without registering it, any register type can be
+used.
 
 
 COMMANDS                                                     *ftmacros-commands*
@@ -58,8 +60,8 @@ If <bang> is used, a default macro is edited.
                                                                   *:MoveMacro*
 :MoveMacro[!] [ft={filetype}] {old} {new}
 
-Move a macro, if it's been saved before.
-If <bang> is used, a default macro is moved.
+Move a macro, if it's been saved before, from {old} register to {new}
+register. If <bang> is used, a default macro is moved.
 
 -------------------------------------------------------------------------------
                                                                  *:DeleteMacro*
